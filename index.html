@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>客戶每日件數管理與月結系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f8fafc; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 700; }
+  </style>
+</head>
+<body class="pb-20 text-slate-800">
+
+  <header class="bg-white shadow-sm sticky top-0 z-30">
+    <div class="max-w-lg mx-auto px-4 py-3 flex justify-between items-center">
+      <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+        <span>📦</span> 每日客戶件數統計
+      </h1>
+      <button onclick="openSettings()" class="text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium">
+        ⚙️ 設定
+      </button>
+    </div>
+    <div class="max-w-lg mx-auto flex border-t border-slate-100 text-sm">
+      <button id="tab-scan" onclick="switchTab('scan')" class="flex-1 py-2.5 text-center tab-active">📸 拍照辨識</button>
+      <button id="tab-calendar" onclick="switchTab('calendar')" class="flex-1 py-2.5 text-center text-slate-500">📅 月曆與月結總表</button>
+    </div>
+  </header>
+
+  <main class="max-w-lg mx-auto p-4">
+
+    <!-- 頁面 1：拍照辨識 -->
+    <section id="view-scan" class="space-y-4">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
+        <p class="text-sm text-slate-500 mb-3">拍攝或上傳手寫單據，自動辨識日期、客戶與件數</p>
+        <label class="block w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow transition">
+          <span>📷 拍照 / 選擇手寫照片</span>
+          <input type="file" id="photoInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+        </label>
+        <div id="previewContainer" class="mt-4 hidden">
+          <img id="imagePreview" class="max-h-56 mx-auto rounded-lg border border-slate-200 object-contain" />
+        </div>
+        <div id="loadingIndicator" class="mt-4 hidden text-blue-600 font-medium text-sm animate-pulse">
+          ⏳ 正在辨識手寫客戶與件數中，請稍候...
+        </div>
+      </div>
+
+      <!-- 辨識結果確認表單 -->
+      <div id="confirmCard" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hidden space-y-4">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h2 class="font-bold text-base text-slate-800">✅ 確認辨識明細</h2>
+          <button onclick="addEmptyRow()" class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg font-medium">
+            ＋ 新增一列
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">紀錄日期</label>
+          <input type="date" id="recordDate" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium">
+        </div>
+
+        <div id="itemsList" class="space-y-2.5"></div>
+
+        <div class="pt-2 border-t flex items-center justify-between text-sm">
+          <span class="text-slate-500">當日辨識總計：</span>
+          <span class="font-bold text-lg text-blue-600"><span id="scanTotalCount">0</span> 件</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-600 bg-amber-50 p-2.5 rounded-lg border border-amber-100">
+          <input type="checkbox" id="overwriteCheck" checked class="rounded text-blue-600">
+          <label for="overwriteCheck">若該日期已有舊資料，自動覆寫更新（避免重複計算）</label>
+        </div>
+
+        <button id="saveBtn" onclick="saveToGoogleSheets()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition">
+          💾 確認無誤並儲存至雲端
+        </button>
+      </div>
+    </section>
+
+    <!-- 頁面 2：月曆與月結總表 -->
+    <section id="view-calendar" class="hidden space-y-5">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
+        <button onclick="changeMonth(-1)" class="px-3 py-1.5 bg-slate-100 rounded-lg font-bold text-slate-600">◀</button>
+        <div class="text-center">
+          <h2 id="currentMonthLabel" class="text-lg font-bold text-slate-800">2026年 11月</h2>
+          <p class="text-xs text-slate-400">點擊日期查看當日明細與圖表</p>
+        </div>
+        <button onclick="changeMonth(1)" class="px-3 py-1.5 bg-slate-100 rounded-lg font-bold text-slate-600">▶</button>
+      </div>
+
+      <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+        <div class="calendar-grid text-center text-xs font-bold text-slate-400 pb-2">
+          <div class="text-rose-500">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-500">六</div>
+        </div>
+        <div id="calendarDays" class="calendar-grid"></div>
+      </div>
+
+      <!-- 單日明細與圖表 -->
+      <div id="dailyDetailCard" class="bg-white p-5 rounded-2xl shadow-sm border border-blue-200 hidden space-y-4">
+        <div class="flex justify-between items-center border-b pb-2">
+          <div>
+            <h3 id="selectedDateTitle" class="font-bold text-base text-blue-700">明細</h3>
+            <p class="text-xs text-slate-500">當日總件數：<span id="dailyTotalBadge" class="font-bold text-slate-800">0</span> 件</p>
+          </div>
+          <div class="flex gap-1.5">
+            <button onclick="copyDailyText()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg font-medium">📋 複製</button>
+            <button onclick="deleteSelectedDate()" class="text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg font-medium">🗑️ 刪除</button>
+          </div>
+        </div>
+        <div class="h-48"><canvas id="dailyChart"></canvas></div>
+        <div id="dailyTableBody" class="divide-y divide-slate-100 text-sm"></div>
+      </div>
+
+      <!-- 當月各客戶總件數加總 -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+        <div class="flex justify-between items-center border-b pb-2">
+          <div>
+            <h3 class="font-bold text-base text-slate-800">📊 當月各客戶累計總件數</h3>
+            <p class="text-xs text-slate-500">本月所有客戶合計：<span id="monthGrandTotal" class="font-bold text-blue-600 text-sm">0</span> 件</p>
+          </div>
+          <button onclick="copyMonthlySummary()" class="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-semibold">
+            📋 複製月結總表
+          </button>
+        </div>
+        <div id="monthlyCustomerSummary" class="space-y-2.5 text-sm">
+          <p class="text-center text-slate-400 py-4 text-xs">載入中...</p>
+        </div>
+        <div class="h-52 pt-2"><canvas id="monthlyChart"></canvas></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 設定彈窗 -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
+      <h3 class="font-bold text-lg text-slate-800">⚙️ 系統連線與客戶字典設定</h3>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Google Apps Script 網頁應用程式網址</label>
+        <input type="text" id="cfgGasUrl" placeholder="https://script.google.com/macros/s/..." class="w-full border rounded-lg px-3 py-2 text-xs">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">常用客戶名單白名單（用逗號分隔）</label>
+        <textarea id="cfgCustomers" rows="2" class="w-full border rounded-lg px-3 py-2 text-xs">三陽,台鈴,統益,三另,棧板,鈴另,朝陽,睿台</textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeSettings()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg">取消</button>
+        <button onclick="saveSettings()" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg font-bold">儲存設定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let config = {
+      gasUrl: localStorage.getItem('cfg_gas_url') || '',
+      customers: (localStorage.getItem('cfg_customers') || '三陽,台鈴,統益,三另,棧板,鈴另,朝陽,睿台').split(',').map(s => s.trim()).filter(Boolean)
+    };
+
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1;
+    let monthRecords = [];
+    let selectedDateStr = '';
+    let dailyChartInstance = null;
+    let monthlyChartInstance = null;
+
+    window.onload = () => {
+      if (!config.gasUrl) openSettings();
+      document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
+    };
+
+    function switchTab(tab) {
+      document.getElementById('view-scan').classList.toggle('hidden', tab !== 'scan');
+      document.getElementById('view-calendar').classList.toggle('hidden', tab !== 'calendar');
+      document.getElementById('tab-scan').classList.toggle('tab-active', tab === 'scan');
+      document.getElementById('tab-calendar').classList.toggle('tab-active', tab === 'calendar');
+      if (tab === 'calendar') loadMonthData();
+    }
+
+    function openSettings() {
+      document.getElementById('cfgGasUrl').value = config.gasUrl;
+      document.getElementById('cfgCustomers').value = config.customers.join(',');
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+    function saveSettings() {
+      config.gasUrl = document.getElementById('cfgGasUrl').value.trim();
+      config.customers = document.getElementById('cfgCustomers').value.split(',').map(s => s.trim()).filter(Boolean);
+      localStorage.setItem('cfg_gas_url', config.gasUrl);
+      localStorage.setItem('cfg_customers', config.customers.join(','));
+      closeSettings();
+      alert('設定已儲存！');
+    }
+
+    // 圖片壓縮並轉 Base64，加快上傳與辨識速度
+    function compressAndReadImage(file, maxWidth = 1280) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if (w > maxWidth) {
+              h = Math.round((h * maxWidth) / w);
+              w = maxWidth;
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            resolve({
+              dataUrl,
+              base64Data: dataUrl.split(',')[1],
+              mimeType: 'image/jpeg'
+            });
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!config.gasUrl) {
+        alert('請先在右上角「設定」填入 Google Apps Script 網址');
+        openSettings();
+        return;
+      }
+
+      document.getElementById('loadingIndicator').classList.remove('hidden');
+      document.getElementById('confirmCard').classList.add('hidden');
+
+      try {
+        const imgObj = await compressAndReadImage(file);
+        document.getElementById('imagePreview').src = imgObj.dataUrl;
+        document.getElementById('previewContainer').classList.remove('hidden');
+
+        const res = await fetch(config.gasUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'recognizeImage',
+            base64Data: imgObj.base64Data,
+            mimeType: imgObj.mimeType,
+            customers: config.customers.join(','),
+            defaultYear: new Date().getFullYear()
+          })
+        });
+        const result = await res.json();
+        if (result.status !== 'success') throw new Error(result.message);
+
+        renderConfirmForm(result.data);
+      } catch (err) {
+        alert('辨識失敗：' + err.message);
+      } finally {
+        document.getElementById('loadingIndicator').classList.add('hidden');
+      }
+    }
+
+    function renderConfirmForm(parsed) {
+      if (parsed && parsed.date) {
+        document.getElementById('recordDate').value = parsed.date;
+      }
+      const listEl = document.getElementById('itemsList');
+      listEl.innerHTML = '';
+
+      if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+        parsed.items.forEach(item => addItemRow(item.customer, item.count));
+      } else {
+        addEmptyRow();
+      }
+      updateScanTotal();
+      document.getElementById('confirmCard').classList.remove('hidden');
+    }
+
+    function addEmptyRow() {
+      addItemRow(config.customers[0] || '', '');
+    }
+
+    function addItemRow(customerName, countVal) {
+      const listEl = document.getElementById('itemsList');
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2 item-row';
+
+      const listId = 'cust-list-' + Math.random().toString(36).substring(2, 7);
+      const optionsHtml = config.customers.map(c => `<option value="${c}">`).join('');
+
+      row.innerHTML = `
+        <input type="text" list="${listId}" value="${customerName || ''}" placeholder="客戶名稱"
+          class="cust-input flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium">
+        <datalist id="${listId}">${optionsHtml}</datalist>
+        <input type="number" value="${countVal || ''}" placeholder="件數" oninput="updateScanTotal()"
+          class="count-input w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-right text-emerald-700">
+        <span class="text-xs text-slate-500">件</span>
+        <button onclick="this.parentElement.remove(); updateScanTotal();" class="text-rose-400 hover:text-rose-600 px-1.5 font-bold">✕</button>
+      `;
+      listEl.appendChild(row);
+    }
+
+    function updateScanTotal() {
+      let total = 0;
+      document.querySelectorAll('.count-input').forEach(inp => {
+        total += Number(inp.value) || 0;
+      });
+      document.getElementById('scanTotalCount').innerText = total.toLocaleString();
+    }
+
+    async function saveToGoogleSheets() {
+      if (!config.gasUrl) return;
+      const dateStr = document.getElementById('recordDate').value;
+      if (!dateStr) { alert('請選擇紀錄日期'); return; }
+
+      const items = [];
+      document.querySelectorAll('.item-row').forEach(row => {
+        const customer = row.querySelector('.cust-input').value.trim();
+        const count = Number(row.querySelector('.count-input').value) || 0;
+        if (customer && count > 0) items.push({ customer, count });
+      });
+
+      if (items.length === 0) { alert('請至少輸入一筆有效的客戶與件數'); return; }
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ 正在寫入雲端試算表...';
+
+      try {
+        const res = await fetch(config.gasUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'saveDaily',
+            date: dateStr,
+            items,
+            overwrite: document.getElementById('overwriteCheck').checked
+          })
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          alert(`✅ ${dateStr} 紀錄已成功儲存！`);
+          document.getElementById('confirmCard').classList.add('hidden');
+          document.getElementById('previewContainer').classList.add('hidden');
+          document.getElementById('photoInput').value = '';
+
+          const [y, m] = dateStr.split('-');
+          currentYear = Number(y);
+          currentMonth = Number(m);
+          selectedDateStr = dateStr;
+          switchTab('calendar');
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        alert('儲存失敗：' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '💾 確認無誤並儲存至雲端';
+      }
+    }
+
+    function changeMonth(delta) {
+      currentMonth += delta;
+      if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+      if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+      selectedDateStr = '';
+      document.getElementById('dailyDetailCard').classList.add('hidden');
+      loadMonthData();
+    }
+
+    async function loadMonthData() {
+      const ym = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+      document.getElementById('currentMonthLabel').innerText = `${currentYear}年 ${currentMonth}月`;
+      if (!config.gasUrl) return;
+
+      try {
+        const res = await fetch(`${config.gasUrl}?month=${ym}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          monthRecords = data.records || [];
+          renderCalendar();
+          renderMonthlySummary();
+          if (selectedDateStr && selectedDateStr.startsWith(ym)) {
+            selectDate(selectedDateStr);
+          }
+        }
+      } catch (err) {
+        console.error('讀取月份資料失敗', err);
+      }
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarDays');
+      grid.innerHTML = '';
+      const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+      const dailyTotals = {};
+      monthRecords.forEach(r => {
+        dailyTotals[r.date] = (dailyTotals[r.date] || 0) + r.count;
+      });
+
+      for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="h-14"></div>`;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const total = dailyTotals[dateStr] || 0;
+        const isSelected = dateStr === selectedDateStr;
+
+        const cell = document.createElement('button');
+        cell.onclick = () => selectDate(dateStr);
+        cell.className = `h-14 rounded-xl flex flex-col items-center justify-center border transition ${
+          isSelected ? 'bg-blue-600 text-white border-blue-600 shadow' :
+          total > 0 ? 'bg-blue-50/70 border-blue-200 text-slate-800 hover:bg-blue-100' :
+          'bg-slate-50/50 border-transparent text-slate-400 hover:bg-slate-100'
+        }`;
+        cell.innerHTML = `
+          <span class="text-xs font-bold">${d}</span>
+          ${total > 0 ? `<span class="text-[10px] font-bold mt-0.5 px-1.5 rounded-full ${isSelected ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}">${total}</span>` : ''}
+        `;
+        grid.appendChild(cell);
+      }
+    }
+
+    function selectDate(dateStr) {
+      selectedDateStr = dateStr;
+      renderCalendar();
+
+      const dayItems = monthRecords.filter(r => r.date === dateStr);
+      const card = document.getElementById('dailyDetailCard');
+      card.classList.remove('hidden');
+      document.getElementById('selectedDateTitle').innerText = `${dateStr} 客戶件數明細`;
+
+      const total = dayItems.reduce((sum, item) => sum + item.count, 0);
+      document.getElementById('dailyTotalBadge').innerText = total.toLocaleString();
+
+      const tbody = document.getElementById('dailyTableBody');
+      tbody.innerHTML = dayItems.length === 0
+        ? `<p class="py-3 text-center text-slate-400 text-xs">當日無紀錄</p>`
+        : dayItems.map(item => `
+            <div class="py-2 flex justify-between items-center">
+              <span class="font-medium text-slate-700">${item.customer}</span>
+              <span class="font-bold text-slate-900">${item.count.toLocaleString()} 件</span>
+            </div>
+          `).join('');
+
+      const ctx = document.getElementById('dailyChart').getContext('2d');
+      if (dailyChartInstance) dailyChartInstance.destroy();
+      dailyChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dayItems.map(i => i.customer),
+          datasets: [{ label: '件數', data: dayItems.map(i => i.count), backgroundColor: '#3b82f6', borderRadius: 6 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    function renderMonthlySummary() {
+      const summaryMap = {};
+      let grandTotal = 0;
+
+      monthRecords.forEach(r => {
+        summaryMap[r.customer] = (summaryMap[r.customer] || 0) + r.count;
+        grandTotal += r.count;
+      });
+
+      document.getElementById('monthGrandTotal').innerText = grandTotal.toLocaleString();
+      const sortedCustomers = Object.entries(summaryMap).sort((a, b) => b[1] - a[1]);
+      const container = document.getElementById('monthlyCustomerSummary');
+
+      if (sortedCustomers.length === 0) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-3 text-xs">本月尚無任何紀錄</p>`;
+        if (monthlyChartInstance) monthlyChartInstance.destroy();
+        return;
+      }
+
+      container.innerHTML = sortedCustomers.map(([cust, sum]) => {
+        const pct = grandTotal > 0 ? ((sum / grandTotal) * 100).toFixed(1) : 0;
+        return `
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-slate-800">${cust}</span>
+              <div>
+                <span class="font-bold text-blue-700">${sum.toLocaleString()} 件</span>
+                <span class="text-xs text-slate-400 ml-1">(${pct}%)</span>
+              </div>
+            </div>
+            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-blue-600 h-full rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      if (monthlyChartInstance) monthlyChartInstance.destroy();
+      monthlyChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: sortedCustomers.map(i => i[0]),
+          datasets: [{
+            data: sortedCustomers.map(i => i[1]),
+            backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+    }
+
+    function copyDailyText() {
+      const dayItems = monthRecords.filter(r => r.date === selectedDateStr);
+      if (dayItems.length === 0) return;
+      const total = dayItems.reduce((s, i) => s + i.count, 0);
+      const lines = [`📅 ${selectedDateStr} 客戶件數統計`, ...dayItems.map(i => `• ${i.customer}：${i.count} 件`), `----------------`, `合計：${total} 件`];
+      navigator.clipboard.writeText(lines.join('\n')).then(() => alert('已複製當日統計文字！'));
+    }
+
+    function copyMonthlySummary() {
+      const summaryMap = {};
+      let grandTotal = 0;
+      monthRecords.forEach(r => {
+        summaryMap[r.customer] = (summaryMap[r.customer] || 0) + r.count;
+        grandTotal += r.count;
+      });
+      const sorted = Object.entries(summaryMap).sort((a, b) => b[1] - a[1]);
+      if (sorted.length === 0) return;
+
+      const lines = [
+        `📊 ${currentYear}年${currentMonth}月 各客戶總件數統計`,
+        ...sorted.map(([c, s]) => `• ${c}：${s.toLocaleString()} 件`),
+        `================`,
+        `本月總合計：${grandTotal.toLocaleString()} 件`
+      ];
+      navigator.clipboard.writeText(lines.join('\n')).then(() => alert('已複製本月結算總表文字！'));
+    }
+
+    async function deleteSelectedDate() {
+      if (!selectedDateStr || !confirm(`確定要刪除 ${selectedDateStr} 的所有紀錄嗎？`)) return;
+      try {
+        await fetch(config.gasUrl, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'deleteByDate', date: selectedDateStr })
+        });
+        document.getElementById('dailyDetailCard').classList.add('hidden');
+        loadMonthData();
+      } catch (err) {
+        alert('刪除失敗：' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
