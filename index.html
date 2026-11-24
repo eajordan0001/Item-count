@@ -1,202 +1,265 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>客戶每日件數管理與月結系統</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>每日客戶件數統計</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f8fafc; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-    .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 700; }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Noto Sans TC", sans-serif;
+    }
   </style>
 </head>
-<body class="pb-20 text-slate-800">
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-10">
 
-  <header class="bg-white shadow-sm sticky top-0 z-30">
-    <div class="max-w-lg mx-auto px-4 py-3 flex justify-between items-center">
-      <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-        <span>📦</span> 每日客戶件數統計
-      </h1>
-      <button onclick="openSettings()" class="text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium">
-        ⚙️ 設定
+  <!-- 頂部導覽列 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📦</span>
+        <h1 class="font-bold text-base sm:text-lg text-slate-900">每日客戶件數統計</h1>
+      </div>
+      <button onclick="openSettingsModal()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium flex items-center gap-1 transition">
+        <span>⚙️</span>
+        <span>設定</span>
       </button>
     </div>
-    <div class="max-w-lg mx-auto flex border-t border-slate-100 text-sm">
-      <button id="tab-scan" onclick="switchTab('scan')" class="flex-1 py-2.5 text-center tab-active">📸 拍照辨識</button>
-      <button id="tab-calendar" onclick="switchTab('calendar')" class="flex-1 py-2.5 text-center text-slate-500">📅 月曆與月結總表</button>
+
+    <!-- 分頁切換 -->
+    <div class="max-w-xl mx-auto grid grid-cols-2 border-t border-slate-100 bg-white">
+      <button id="tabBtnCapture" onclick="switchTab('capture')" class="py-2.5 text-sm font-bold border-b-2 border-blue-600 text-blue-600 flex items-center justify-center gap-1.5 transition">
+        <span>📷</span>
+        <span>拍照辨識</span>
+      </button>
+      <button id="tabBtnCalendar" onclick="switchTab('calendar')" class="py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1.5 transition">
+        <span>📅</span>
+        <span>月曆與月結總表</span>
+      </button>
     </div>
   </header>
 
-  <main class="max-w-lg mx-auto p-4">
+  <main class="max-w-xl mx-auto px-4 pt-4 space-y-4">
 
-    <!-- 頁面 1：拍照辨識 -->
-    <section id="view-scan" class="space-y-4">
-      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
-        <p class="text-sm text-slate-500 mb-3">拍攝或上傳手寫單據，自動辨識日期、客戶與件數</p>
-        <label class="block w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow transition">
-          <span>📷 拍照 / 選擇手寫照片</span>
-          <input type="file" id="photoInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-        </label>
-        <div id="previewContainer" class="mt-4 hidden">
-          <img id="imagePreview" class="max-h-56 mx-auto rounded-lg border border-slate-200 object-contain" />
+    <!-- ==================== 分頁一：拍照辨識 ==================== -->
+    <section id="tabCapture" class="space-y-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
+        <div class="text-center space-y-1">
+          <p class="text-xs sm:text-sm text-slate-500">拍攝或上傳手寫單據，自動辨識日期、客戶與件數</p>
         </div>
-        <div id="loadingIndicator" class="mt-4 hidden text-blue-600 font-medium text-sm animate-pulse">
+
+        <label class="block w-full cursor-pointer">
+          <input id="photoInput" type="file" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(event)" />
+          <div class="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-center text-sm sm:text-base shadow-sm transition flex items-center justify-center gap-2">
+            <span>📷</span>
+            <span>拍照 / 選擇手寫照片</span>
+          </div>
+        </label>
+
+        <!-- 圖片預覽區 -->
+        <div id="previewBox" class="hidden space-y-2">
+          <img id="previewImg" src="" alt="單據預覽" class="w-full max-h-64 object-contain rounded-xl border border-slate-200 bg-slate-50" />
+        </div>
+
+        <!-- 辨識狀態提示 -->
+        <div id="statusBox" class="hidden py-2.5 px-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs sm:text-sm text-center font-medium">
           ⏳ 正在辨識手寫客戶與件數中，請稍候...
         </div>
       </div>
 
       <!-- 辨識結果確認表單 -->
-      <div id="confirmCard" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hidden space-y-4">
-        <div class="flex justify-between items-center border-b pb-2">
-          <h2 class="font-bold text-base text-slate-800">✅ 確認辨識明細</h2>
-          <button onclick="addEmptyRow()" class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg font-medium">
-            ＋ 新增一列
-          </button>
+      <div id="reviewCard" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <h2 class="font-bold text-base text-slate-900">✅ 確認辨識明細</h2>
+          <button onclick="resetCapture()" class="text-xs text-slate-400 hover:text-slate-600">清除重拍</button>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">紀錄日期</label>
-          <input type="date" id="recordDate" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">單據日期</label>
+          <input id="reviewDate" type="date" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
-        <div id="itemsList" class="space-y-2.5"></div>
-
-        <div class="pt-2 border-t flex items-center justify-between text-sm">
-          <span class="text-slate-500">當日辨識總計：</span>
-          <span class="font-bold text-lg text-blue-600"><span id="scanTotalCount">0</span> 件</span>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-600">客戶與件數明細</label>
+            <button type="button" onclick="addReviewRow()" class="text-xs font-semibold text-blue-600 hover:text-blue-700">+ 新增一列</button>
+          </div>
+          <div id="reviewItemsList" class="space-y-2"></div>
         </div>
 
-        <div class="flex items-center gap-2 text-xs text-slate-600 bg-amber-50 p-2.5 rounded-lg border border-amber-100">
-          <input type="checkbox" id="overwriteCheck" checked class="rounded text-blue-600">
-          <label for="overwriteCheck">若該日期已有舊資料，自動覆寫更新（避免重複計算）</label>
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+          <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+            <input id="overwriteCheckbox" type="checkbox" checked class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+            <span>儲存時覆蓋該日期既有紀錄</span>
+          </label>
+          <div class="text-sm font-bold text-slate-800">
+            合計：<span id="reviewTotalCount" class="text-blue-600">0</span> 件
+          </div>
         </div>
 
-        <button id="saveBtn" onclick="saveToGoogleSheets()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition">
-          💾 確認無誤並儲存至雲端
+        <button id="saveBtn" onclick="saveRecognizedData()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base shadow-sm transition">
+          💾 確認並寫入試算表
         </button>
       </div>
     </section>
 
-    <!-- 頁面 2：月曆與月結總表 -->
-    <section id="view-calendar" class="hidden space-y-5">
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
-        <button onclick="changeMonth(-1)" class="px-3 py-1.5 bg-slate-100 rounded-lg font-bold text-slate-600">◀</button>
-        <div class="text-center">
-          <h2 id="currentMonthLabel" class="text-lg font-bold text-slate-800">2026年 11月</h2>
-          <p class="text-xs text-slate-400">點擊日期查看當日明細與圖表</p>
+    <!-- ==================== 分頁二：月曆與月結總表 ==================== -->
+    <section id="tabCalendar" class="hidden space-y-4">
+
+      <!-- 月份切換與月曆 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <button onclick="changeMonth(-1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-bold">◀ 上月</button>
+          <div id="monthTitle" class="font-bold text-base sm:text-lg text-slate-900">2026 年 11 月</div>
+          <button onclick="changeMonth(1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-bold">下月 ▶</button>
         </div>
-        <button onclick="changeMonth(1)" class="px-3 py-1.5 bg-slate-100 rounded-lg font-bold text-slate-600">▶</button>
+
+        <div class="text-[11px] text-slate-400 text-right">
+          ※ 月曆每日件數已排除「棧板」與「統益」
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-400 pb-1">
+          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+
+        <div id="calendarDays" class="grid grid-cols-7 gap-1"></div>
       </div>
 
-      <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-        <div class="calendar-grid text-center text-xs font-bold text-slate-400 pb-2">
-          <div class="text-rose-500">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="text-blue-500">六</div>
-        </div>
-        <div id="calendarDays" class="calendar-grid"></div>
-      </div>
-
-      <!-- 單日明細與圖表 -->
-      <div id="dailyDetailCard" class="bg-white p-5 rounded-2xl shadow-sm border border-blue-200 hidden space-y-4">
-        <div class="flex justify-between items-center border-b pb-2">
+      <!-- 選定日期明細與圖表 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
           <div>
-            <h3 id="selectedDateTitle" class="font-bold text-base text-blue-700">明細</h3>
-            <p class="text-xs text-slate-500">當日總件數：<span id="dailyTotalBadge" class="font-bold text-slate-800">0</span> 件</p>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900">📋 單日明細：<span id="selectedDateLabel" class="text-blue-600">--</span></h3>
           </div>
-          <div class="flex gap-1.5">
-            <button onclick="copyDailyText()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg font-medium">📋 複製</button>
-            <button onclick="deleteSelectedDate()" class="text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg font-medium">🗑️ 刪除</button>
-          </div>
-        </div>
-        <div class="h-48"><canvas id="dailyChart"></canvas></div>
-        <div id="dailyTableBody" class="divide-y divide-slate-100 text-sm"></div>
-      </div>
-
-      <!-- 當月各客戶總件數加總 -->
-      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-        <div class="flex justify-between items-center border-b pb-2">
-          <div>
-            <h3 class="font-bold text-base text-slate-800">📊 當月各客戶累計總件數</h3>
-            <p class="text-xs text-slate-500">本月所有客戶合計：<span id="monthGrandTotal" class="font-bold text-blue-600 text-sm">0</span> 件</p>
-          </div>
-          <button onclick="copyMonthlySummary()" class="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-semibold">
-            📋 複製月結總表
+          <button id="deleteDateBtn" onclick="deleteSelectedDateRecords()" class="hidden px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold transition">
+            🗑️ 刪除當日
           </button>
         </div>
-        <div id="monthlyCustomerSummary" class="space-y-2.5 text-sm">
-          <p class="text-center text-slate-400 py-4 text-xs">載入中...</p>
+
+        <div id="dayDetailList" class="space-y-1.5 text-sm">
+          <p class="text-slate-400 text-xs py-2 text-center">請點選月曆日期查看明細</p>
         </div>
-        <div class="h-52 pt-2"><canvas id="monthlyChart"></canvas></div>
+
+        <div id="dayTotalBar" class="hidden pt-2 border-t border-slate-100 flex justify-between items-center text-sm font-bold">
+          <span class="text-slate-600">當日總件數（含全部客戶）</span>
+          <span id="dayTotalValue" class="text-blue-600">0 件</span>
+        </div>
+
+        <div id="dayChartWrap" class="hidden pt-2">
+          <canvas id="dayChartCanvas" height="180"></canvas>
+        </div>
+      </div>
+
+      <!-- 當月各客戶累計總件數 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 class="font-bold text-sm sm:text-base text-slate-900">📊 當月各客戶累計總件數</h3>
+          <span id="monthGrandTotal" class="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">總計：0 件</span>
+        </div>
+        <div id="monthlySummaryList" class="divide-y divide-slate-100 text-sm">
+          <p class="text-slate-400 text-xs py-2 text-center">尚無本月資料</p>
+        </div>
       </div>
     </section>
-
   </main>
 
-  <!-- 設定彈窗 -->
-  <div id="settingsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <!-- ==================== 設定 Modal ==================== -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
-      <h3 class="font-bold text-lg text-slate-800">⚙️ 系統連線與客戶字典設定</h3>
-      <div>
-        <label class="block text-xs font-bold text-slate-600 mb-1">Google Apps Script 網頁應用程式網址</label>
-        <input type="text" id="cfgGasUrl" placeholder="https://script.google.com/macros/s/AKfycbxEWD9spdXd5ThmMHz8CvOyBIIwS-HTLUQzv_38H_ZTzGIwFEbCARWo43VPN7aOuqt7/exec" class="w-full border rounded-lg px-3 py-2 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="font-bold text-base text-slate-900">⚙️ 系統設定</h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-600 mb-1">常用客戶名單白名單（用逗號分隔）</label>
-        <textarea id="cfgCustomers" rows="2" class="w-full border rounded-lg px-3 py-2 text-xs">三陽,台鈴,統益,三另,棧板,鈴另,朝陽,睿台</textarea>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Google Apps Script 網頁應用程式網址（/exec）</label>
+          <input id="gasUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">常用客戶白名單（以逗號分隔）</label>
+          <input id="customersInput" type="text" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
       </div>
+
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeSettings()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg">取消</button>
-        <button onclick="saveSettings()" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg font-bold">儲存設定</button>
+        <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">取消</button>
+        <button onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">儲存設定</button>
       </div>
     </div>
   </div>
 
   <script>
-    let config = {
-      gasUrl: localStorage.getItem('cfg_gas_url') || '',
-      customers: (localStorage.getItem('cfg_customers') || '三陽,台鈴,統益,三另,棧板,鈴另,朝陽,睿台').split(',').map(s => s.trim()).filter(Boolean)
-    };
+    const STORAGE_GAS_URL = 'DAILY_COUNT_GAS_URL';
+    const STORAGE_CUSTOMERS = 'DAILY_COUNT_CUSTOMERS';
+    const DEFAULT_CUSTOMERS = '三陽,台鈴,統益,三另,棧板,鈴另,朝陽,睿台';
+
+    // 月曆每日件數排除加總的客戶名稱
+    const EXCLUDED_CALENDAR_CUSTOMERS = ['棧板', '統益'];
 
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
     let monthRecords = [];
     let selectedDateStr = '';
-    let dailyChartInstance = null;
-    let monthlyChartInstance = null;
+    let dayChartInstance = null;
 
-    window.onload = () => {
-      if (!config.gasUrl) openSettings();
-      document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
-    };
-
-    function switchTab(tab) {
-      document.getElementById('view-scan').classList.toggle('hidden', tab !== 'scan');
-      document.getElementById('view-calendar').classList.toggle('hidden', tab !== 'calendar');
-      document.getElementById('tab-scan').classList.toggle('tab-active', tab === 'scan');
-      document.getElementById('tab-calendar').classList.toggle('tab-active', tab === 'calendar');
-      if (tab === 'calendar') loadMonthData();
+    function getGasUrl() {
+      return (localStorage.getItem(STORAGE_GAS_URL) || '').trim();
     }
 
-    function openSettings() {
-      document.getElementById('cfgGasUrl').value = config.gasUrl;
-      document.getElementById('cfgCustomers').value = config.customers.join(',');
+    function getCustomersList() {
+      const raw = (localStorage.getItem(STORAGE_CUSTOMERS) || DEFAULT_CUSTOMERS).trim();
+      return raw.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function openSettingsModal() {
+      document.getElementById('gasUrlInput').value = getGasUrl();
+      document.getElementById('customersInput').value = localStorage.getItem(STORAGE_CUSTOMERS) || DEFAULT_CUSTOMERS;
       document.getElementById('settingsModal').classList.remove('hidden');
     }
-    function closeSettings() {
+
+    function closeSettingsModal() {
       document.getElementById('settingsModal').classList.add('hidden');
     }
+
     function saveSettings() {
-      config.gasUrl = document.getElementById('cfgGasUrl').value.trim();
-      config.customers = document.getElementById('cfgCustomers').value.split(',').map(s => s.trim()).filter(Boolean);
-      localStorage.setItem('cfg_gas_url', config.gasUrl);
-      localStorage.setItem('cfg_customers', config.customers.join(','));
-      closeSettings();
+      const url = document.getElementById('gasUrlInput').value.trim();
+      const customers = document.getElementById('customersInput').value.trim() || DEFAULT_CUSTOMERS;
+      localStorage.setItem(STORAGE_GAS_URL, url);
+      localStorage.setItem(STORAGE_CUSTOMERS, customers);
+      closeSettingsModal();
       alert('設定已儲存！');
+      if (document.getElementById('tabCalendar').classList.contains('hidden') === false) {
+        loadMonthData();
+      }
     }
 
-    // 圖片壓縮並轉 Base64，加快上傳與辨識速度
-    function compressAndReadImage(file, maxWidth = 1280) {
+    function switchTab(tab) {
+      const isCapture = tab === 'capture';
+      document.getElementById('tabCapture').classList.toggle('hidden', !isCapture);
+      document.getElementById('tabCalendar').classList.toggle('hidden', isCapture);
+
+      const btnCapture = document.getElementById('tabBtnCapture');
+      const btnCalendar = document.getElementById('tabBtnCalendar');
+
+      btnCapture.className = `py-2.5 text-sm font-bold border-b-2 flex items-center justify-center gap-1.5 transition ${
+        isCapture ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+      }`;
+      btnCalendar.className = `py-2.5 text-sm font-bold border-b-2 flex items-center justify-center gap-1.5 transition ${
+        !isCapture ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+      }`;
+
+      if (!isCapture) {
+        loadMonthData();
+      }
+    }
+
+    function compressAndReadImage(file, maxWidth = 960) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -212,7 +275,7 @@
             canvas.height = h;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, w, h);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
             resolve({
               dataUrl,
               base64Data: dataUrl.split(',')[1],
@@ -227,172 +290,219 @@
       });
     }
 
-    async function handleImageUpload(event) {
-      const file = event.target.files[0];
+    async function handlePhotoSelected(event) {
+      const file = event.target.files && event.target.files[0];
       if (!file) return;
 
-      if (!config.gasUrl) {
-        alert('請先在右上角「設定」填入 Google Apps Script 網址');
-        openSettings();
+      const gasUrl = getGasUrl();
+      if (!gasUrl) {
+        alert('請先點選右上角「設定」填入 Google Apps Script 網址。');
+        openSettingsModal();
+        event.target.value = '';
         return;
       }
 
-      document.getElementById('loadingIndicator').classList.remove('hidden');
-      document.getElementById('confirmCard').classList.add('hidden');
-
       try {
-        const imgObj = await compressAndReadImage(file);
-        document.getElementById('imagePreview').src = imgObj.dataUrl;
-        document.getElementById('previewContainer').classList.remove('hidden');
+        const compressed = await compressAndReadImage(file);
+        document.getElementById('previewImg').src = compressed.dataUrl;
+        document.getElementById('previewBox').classList.remove('hidden');
+        document.getElementById('reviewCard').classList.add('hidden');
+        document.getElementById('statusBox').classList.remove('hidden');
+        document.getElementById('statusBox').textContent = '⏳ 正在辨識手寫客戶與件數中，請稍候...';
 
-        const res = await fetch(config.gasUrl, {
+        const response = await fetch(gasUrl, {
           method: 'POST',
           body: JSON.stringify({
             action: 'recognizeImage',
-            base64Data: imgObj.base64Data,
-            mimeType: imgObj.mimeType,
-            customers: config.customers.join(','),
+            base64Data: compressed.base64Data,
+            mimeType: compressed.mimeType,
+            customers: getCustomersList().join(','),
             defaultYear: new Date().getFullYear()
           })
         });
-        const result = await res.json();
-        if (result.status !== 'success') throw new Error(result.message);
 
-        renderConfirmForm(result.data);
+        const result = await response.json();
+        document.getElementById('statusBox').classList.add('hidden');
+
+        if (result.status !== 'success') {
+          alert('辨識失敗：' + (result.message || '未知錯誤'));
+          return;
+        }
+
+        populateReviewForm(result.data || {});
       } catch (err) {
-        alert('辨識失敗：' + err.message);
+        document.getElementById('statusBox').classList.add('hidden');
+        alert('辨識發生錯誤：' + err.message);
       } finally {
-        document.getElementById('loadingIndicator').classList.add('hidden');
+        event.target.value = '';
       }
     }
 
-    function renderConfirmForm(parsed) {
-      if (parsed && parsed.date) {
-        document.getElementById('recordDate').value = parsed.date;
-      }
-      const listEl = document.getElementById('itemsList');
+    function populateReviewForm(data) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      document.getElementById('reviewDate').value = data.date || todayStr;
+
+      const listEl = document.getElementById('reviewItemsList');
       listEl.innerHTML = '';
 
-      if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
-        parsed.items.forEach(item => addItemRow(item.customer, item.count));
-      } else {
-        addEmptyRow();
+      const items = Array.isArray(data.items) && data.items.length > 0
+        ? data.items
+        : [{ customer: '', count: '' }];
+
+      items.forEach(item => addReviewRow(item.customer || '', item.count ?? ''));
+      updateReviewTotal();
+      document.getElementById('reviewCard').classList.remove('hidden');
+    }
+
+    function addReviewRow(customer = '', count = '') {
+      const listEl = document.getElementById('reviewItemsList');
+      const customers = getCustomersList();
+      const datalistId = 'customerDatalist';
+
+      let datalistEl = document.getElementById(datalistId);
+      if (!datalistEl) {
+        datalistEl = document.createElement('datalist');
+        datalistEl.id = datalistId;
+        document.body.appendChild(datalistEl);
       }
-      updateScanTotal();
-      document.getElementById('confirmCard').classList.remove('hidden');
-    }
+      datalistEl.innerHTML = customers.map(c => `<option value="${c}"></option>`).join('');
 
-    function addEmptyRow() {
-      addItemRow(config.customers[0] || '', '');
-    }
-
-    function addItemRow(customerName, countVal) {
-      const listEl = document.getElementById('itemsList');
       const row = document.createElement('div');
-      row.className = 'flex items-center gap-2 item-row';
-
-      const listId = 'cust-list-' + Math.random().toString(36).substring(2, 7);
-      const optionsHtml = config.customers.map(c => `<option value="${c}">`).join('');
-
+      row.className = 'flex items-center gap-2 review-row';
       row.innerHTML = `
-        <input type="text" list="${listId}" value="${customerName || ''}" placeholder="客戶名稱"
-          class="cust-input flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium">
-        <datalist id="${listId}">${optionsHtml}</datalist>
-        <input type="number" value="${countVal || ''}" placeholder="件數" oninput="updateScanTotal()"
-          class="count-input w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-right text-emerald-700">
-        <span class="text-xs text-slate-500">件</span>
-        <button onclick="this.parentElement.remove(); updateScanTotal();" class="text-rose-400 hover:text-rose-600 px-1.5 font-bold">✕</button>
+        <input type="text" list="${datalistId}" value="${escapeAttr(customer)}" placeholder="客戶名稱"
+          class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 item-customer" />
+        <input type="number" min="0" step="1" value="${count !== '' ? escapeAttr(count) : ''}" placeholder="件數" oninput="updateReviewTotal()"
+          class="w-24 px-3 py-2 rounded-xl border border-slate-300 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500 item-count" />
+        <button type="button" onclick="removeReviewRow(this)" class="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 text-xs font-bold">✕</button>
       `;
       listEl.appendChild(row);
+      updateReviewTotal();
     }
 
-    function updateScanTotal() {
+    function removeReviewRow(btn) {
+      btn.closest('.review-row').remove();
+      updateReviewTotal();
+    }
+
+    function updateReviewTotal() {
       let total = 0;
-      document.querySelectorAll('.count-input').forEach(inp => {
-        total += Number(inp.value) || 0;
+      document.querySelectorAll('.review-row .item-count').forEach(input => {
+        total += Number(input.value) || 0;
       });
-      document.getElementById('scanTotalCount').innerText = total.toLocaleString();
+      document.getElementById('reviewTotalCount').textContent = total;
     }
 
-    async function saveToGoogleSheets() {
-      if (!config.gasUrl) return;
-      const dateStr = document.getElementById('recordDate').value;
-      if (!dateStr) { alert('請選擇紀錄日期'); return; }
+    function resetCapture() {
+      document.getElementById('previewBox').classList.add('hidden');
+      document.getElementById('previewImg').src = '';
+      document.getElementById('statusBox').classList.add('hidden');
+      document.getElementById('reviewCard').classList.add('hidden');
+      document.getElementById('reviewItemsList').innerHTML = '';
+      document.getElementById('reviewTotalCount').textContent = '0';
+    }
+
+    async function saveRecognizedData() {
+      const gasUrl = getGasUrl();
+      if (!gasUrl) {
+        alert('請先設定 Google Apps Script 網址。');
+        return;
+      }
+
+      const dateStr = document.getElementById('reviewDate').value;
+      if (!dateStr) {
+        alert('請選擇單據日期。');
+        return;
+      }
 
       const items = [];
-      document.querySelectorAll('.item-row').forEach(row => {
-        const customer = row.querySelector('.cust-input').value.trim();
-        const count = Number(row.querySelector('.count-input').value) || 0;
-        if (customer && count > 0) items.push({ customer, count });
+      document.querySelectorAll('.review-row').forEach(row => {
+        const customer = row.querySelector('.item-customer').value.trim();
+        const count = Number(row.querySelector('.item-count').value) || 0;
+        if (customer && count > 0) {
+          items.push({ customer, count });
+        }
       });
 
-      if (items.length === 0) { alert('請至少輸入一筆有效的客戶與件數'); return; }
+      if (items.length === 0) {
+        alert('請至少輸入一筆有效的客戶名稱與大於 0 的件數。');
+        return;
+      }
 
-      const btn = document.getElementById('saveBtn');
-      btn.disabled = true;
-      btn.innerText = '⏳ 正在寫入雲端試算表...';
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = '寫入中...';
 
       try {
-        const res = await fetch(config.gasUrl, {
+        const overwrite = document.getElementById('overwriteCheckbox').checked;
+        const response = await fetch(gasUrl, {
           method: 'POST',
           body: JSON.stringify({
             action: 'saveDaily',
             date: dateStr,
             items,
-            overwrite: document.getElementById('overwriteCheck').checked
+            overwrite
           })
         });
-        const result = await res.json();
-        if (result.status === 'success') {
-          alert(`✅ ${dateStr} 紀錄已成功儲存！`);
-          document.getElementById('confirmCard').classList.add('hidden');
-          document.getElementById('previewContainer').classList.add('hidden');
-          document.getElementById('photoInput').value = '';
 
-          const [y, m] = dateStr.split('-');
-          currentYear = Number(y);
-          currentMonth = Number(m);
-          selectedDateStr = dateStr;
-          switchTab('calendar');
-        } else {
-          throw new Error(result.message);
+        const result = await response.json();
+        if (result.status !== 'success') {
+          alert('儲存失敗：' + (result.message || '未知錯誤'));
+          return;
         }
+
+        alert('已成功寫入 Google 試算表！');
+        resetCapture();
+        const [y, m] = dateStr.split('-').map(Number);
+        currentYear = y;
+        currentMonth = m;
+        selectedDateStr = dateStr;
+        switchTab('calendar');
       } catch (err) {
-        alert('儲存失敗：' + err.message);
+        alert('儲存發生錯誤：' + err.message);
       } finally {
-        btn.disabled = false;
-        btn.innerText = '💾 確認無誤並儲存至雲端';
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 確認並寫入試算表';
       }
     }
 
     function changeMonth(delta) {
       currentMonth += delta;
-      if (currentMonth > 12) { currentMonth = 1; currentYear++; }
-      if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear += 1;
+      } else if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear -= 1;
+      }
       selectedDateStr = '';
-      document.getElementById('dailyDetailCard').classList.add('hidden');
       loadMonthData();
     }
 
     async function loadMonthData() {
-      const ym = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-      document.getElementById('currentMonthLabel').innerText = `${currentYear}年 ${currentMonth}月`;
-      if (!config.gasUrl) return;
-
-      try {
-        const res = await fetch(`${config.gasUrl}?month=${ym}`);
-        const data = await res.json();
-        if (data.status === 'success') {
-          monthRecords = data.records || [];
-          renderCalendar();
-          renderMonthlySummary();
-          if (selectedDateStr && selectedDateStr.startsWith(ym)) {
-            selectDate(selectedDateStr);
-          }
-        }
-      } catch (err) {
-        console.error('讀取月份資料失敗', err);
+      document.getElementById('monthTitle').textContent = `${currentYear} 年 ${currentMonth} 月`;
+      const gasUrl = getGasUrl();
+      if (!gasUrl) {
+        monthRecords = [];
+        renderCalendar();
+        renderDayDetail();
+        renderMonthlySummary();
+        return;
       }
+
+      const ym = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+      try {
+        const res = await fetch(`${gasUrl}?month=${encodeURIComponent(ym)}`);
+        const data = await res.json();
+        monthRecords = (data.status === 'success' && Array.isArray(data.records)) ? data.records : [];
+      } catch (err) {
+        console.error(err);
+        monthRecords = [];
+      }
+
+      renderCalendar();
+      renderDayDetail();
+      renderMonthlySummary();
     }
 
     function renderCalendar() {
@@ -401,12 +511,16 @@
       const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
       const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
 
+      // 統計每天的總件數（排除「棧板」與「統益」）
       const dailyTotals = {};
       monthRecords.forEach(r => {
-        dailyTotals[r.date] = (dailyTotals[r.date] || 0) + r.count;
+        if (EXCLUDED_CALENDAR_CUSTOMERS.includes(String(r.customer).trim())) return;
+        dailyTotals[r.date] = (dailyTotals[r.date] || 0) + (Number(r.count) || 0);
       });
 
-      for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="h-14"></div>`;
+      for (let i = 0; i < firstDay; i++) {
+        grid.innerHTML += `<div class="h-14"></div>`;
+      }
 
       for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -431,138 +545,153 @@
     function selectDate(dateStr) {
       selectedDateStr = dateStr;
       renderCalendar();
-
-      const dayItems = monthRecords.filter(r => r.date === dateStr);
-      const card = document.getElementById('dailyDetailCard');
-      card.classList.remove('hidden');
-      document.getElementById('selectedDateTitle').innerText = `${dateStr} 客戶件數明細`;
-
-      const total = dayItems.reduce((sum, item) => sum + item.count, 0);
-      document.getElementById('dailyTotalBadge').innerText = total.toLocaleString();
-
-      const tbody = document.getElementById('dailyTableBody');
-      tbody.innerHTML = dayItems.length === 0
-        ? `<p class="py-3 text-center text-slate-400 text-xs">當日無紀錄</p>`
-        : dayItems.map(item => `
-            <div class="py-2 flex justify-between items-center">
-              <span class="font-medium text-slate-700">${item.customer}</span>
-              <span class="font-bold text-slate-900">${item.count.toLocaleString()} 件</span>
-            </div>
-          `).join('');
-
-      const ctx = document.getElementById('dailyChart').getContext('2d');
-      if (dailyChartInstance) dailyChartInstance.destroy();
-      dailyChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: dayItems.map(i => i.customer),
-          datasets: [{ label: '件數', data: dayItems.map(i => i.count), backgroundColor: '#3b82f6', borderRadius: 6 }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } }
-        }
-      });
+      renderDayDetail();
     }
 
-    function renderMonthlySummary() {
-      const summaryMap = {};
-      let grandTotal = 0;
+    function renderDayDetail() {
+      const labelEl = document.getElementById('selectedDateLabel');
+      const listEl = document.getElementById('dayDetailList');
+      const totalBar = document.getElementById('dayTotalBar');
+      const totalValEl = document.getElementById('dayTotalValue');
+      const deleteBtn = document.getElementById('deleteDateBtn');
+      const chartWrap = document.getElementById('dayChartWrap');
 
-      monthRecords.forEach(r => {
-        summaryMap[r.customer] = (summaryMap[r.customer] || 0) + r.count;
-        grandTotal += r.count;
-      });
-
-      document.getElementById('monthGrandTotal').innerText = grandTotal.toLocaleString();
-      const sortedCustomers = Object.entries(summaryMap).sort((a, b) => b[1] - a[1]);
-      const container = document.getElementById('monthlyCustomerSummary');
-
-      if (sortedCustomers.length === 0) {
-        container.innerHTML = `<p class="text-center text-slate-400 py-3 text-xs">本月尚無任何紀錄</p>`;
-        if (monthlyChartInstance) monthlyChartInstance.destroy();
+      if (!selectedDateStr) {
+        labelEl.textContent = '--';
+        listEl.innerHTML = `<p class="text-slate-400 text-xs py-2 text-center">請點選月曆日期查看明細</p>`;
+        totalBar.classList.add('hidden');
+        deleteBtn.classList.add('hidden');
+        chartWrap.classList.add('hidden');
         return;
       }
 
-      container.innerHTML = sortedCustomers.map(([cust, sum]) => {
-        const pct = grandTotal > 0 ? ((sum / grandTotal) * 100).toFixed(1) : 0;
+      labelEl.textContent = selectedDateStr;
+      const dayRows = monthRecords.filter(r => r.date === selectedDateStr);
+
+      if (dayRows.length === 0) {
+        listEl.innerHTML = `<p class="text-slate-400 text-xs py-2 text-center">此日期尚無紀錄</p>`;
+        totalBar.classList.add('hidden');
+        deleteBtn.classList.add('hidden');
+        chartWrap.classList.add('hidden');
+        return;
+      }
+
+      deleteBtn.classList.remove('hidden');
+      let daySum = 0;
+      listEl.innerHTML = dayRows.map(r => {
+        const c = Number(r.count) || 0;
+        daySum += c;
         return `
-          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-            <div class="flex justify-between items-center mb-1">
-              <span class="font-bold text-slate-800">${cust}</span>
-              <div>
-                <span class="font-bold text-blue-700">${sum.toLocaleString()} 件</span>
-                <span class="text-xs text-slate-400 ml-1">(${pct}%)</span>
-              </div>
-            </div>
-            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-              <div class="bg-blue-600 h-full rounded-full" style="width: ${pct}%"></div>
-            </div>
+          <div class="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50">
+            <span class="font-medium text-slate-800">${escapeHtml(r.customer)}</span>
+            <span class="font-bold text-slate-900">${c} 件</span>
           </div>
         `;
       }).join('');
 
-      const ctx = document.getElementById('monthlyChart').getContext('2d');
-      if (monthlyChartInstance) monthlyChartInstance.destroy();
-      monthlyChartInstance = new Chart(ctx, {
-        type: 'doughnut',
+      totalValEl.textContent = `${daySum} 件`;
+      totalBar.classList.remove('hidden');
+      renderDayChart(dayRows);
+    }
+
+    function renderDayChart(dayRows) {
+      const chartWrap = document.getElementById('dayChartWrap');
+      chartWrap.classList.remove('hidden');
+      const ctx = document.getElementById('dayChartCanvas').getContext('2d');
+
+      if (dayChartInstance) {
+        dayChartInstance.destroy();
+      }
+
+      dayChartInstance = new Chart(ctx, {
+        type: 'bar',
         data: {
-          labels: sortedCustomers.map(i => i[0]),
+          labels: dayRows.map(r => r.customer),
           datasets: [{
-            data: sortedCustomers.map(i => i[1]),
-            backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b']
+            label: '件數',
+            data: dayRows.map(r => Number(r.count) || 0),
+            backgroundColor: '#2563eb',
+            borderRadius: 6
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
         }
       });
     }
 
-    function copyDailyText() {
-      const dayItems = monthRecords.filter(r => r.date === selectedDateStr);
-      if (dayItems.length === 0) return;
-      const total = dayItems.reduce((s, i) => s + i.count, 0);
-      const lines = [`📅 ${selectedDateStr} 客戶件數統計`, ...dayItems.map(i => `• ${i.customer}：${i.count} 件`), `----------------`, `合計：${total} 件`];
-      navigator.clipboard.writeText(lines.join('\n')).then(() => alert('已複製當日統計文字！'));
-    }
+    async function deleteSelectedDateRecords() {
+      if (!selectedDateStr) return;
+      if (!confirm(`確定要刪除 ${selectedDateStr} 的所有紀錄嗎？`)) return;
 
-    function copyMonthlySummary() {
-      const summaryMap = {};
-      let grandTotal = 0;
-      monthRecords.forEach(r => {
-        summaryMap[r.customer] = (summaryMap[r.customer] || 0) + r.count;
-        grandTotal += r.count;
-      });
-      const sorted = Object.entries(summaryMap).sort((a, b) => b[1] - a[1]);
-      if (sorted.length === 0) return;
+      const gasUrl = getGasUrl();
+      if (!gasUrl) return;
 
-      const lines = [
-        `📊 ${currentYear}年${currentMonth}月 各客戶總件數統計`,
-        ...sorted.map(([c, s]) => `• ${c}：${s.toLocaleString()} 件`),
-        `================`,
-        `本月總合計：${grandTotal.toLocaleString()} 件`
-      ];
-      navigator.clipboard.writeText(lines.join('\n')).then(() => alert('已複製本月結算總表文字！'));
-    }
-
-    async function deleteSelectedDate() {
-      if (!selectedDateStr || !confirm(`確定要刪除 ${selectedDateStr} 的所有紀錄嗎？`)) return;
       try {
-        await fetch(config.gasUrl, {
+        const res = await fetch(gasUrl, {
           method: 'POST',
           body: JSON.stringify({ action: 'deleteByDate', date: selectedDateStr })
         });
-        document.getElementById('dailyDetailCard').classList.add('hidden');
-        loadMonthData();
+        const data = await res.json();
+        if (data.status === 'success') {
+          selectedDateStr = '';
+          await loadMonthData();
+        } else {
+          alert('刪除失敗：' + (data.message || '未知錯誤'));
+        }
       } catch (err) {
-        alert('刪除失敗：' + err.message);
+        alert('刪除發生錯誤：' + err.message);
       }
     }
+
+    function renderMonthlySummary() {
+      const listEl = document.getElementById('monthlySummaryList');
+      const grandTotalEl = document.getElementById('monthGrandTotal');
+
+      if (monthRecords.length === 0) {
+        listEl.innerHTML = `<p class="text-slate-400 text-xs py-2 text-center">尚無本月資料</p>`;
+        grandTotalEl.textContent = '總計：0 件';
+        return;
+      }
+
+      const map = {};
+      let grandTotal = 0;
+      monthRecords.forEach(r => {
+        const cust = String(r.customer).trim();
+        const cnt = Number(r.count) || 0;
+        map[cust] = (map[cust] || 0) + cnt;
+        grandTotal += cnt;
+      });
+
+      const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
+      grandTotalEl.textContent = `總計：${grandTotal} 件`;
+
+      listEl.innerHTML = sorted.map(([cust, total]) => `
+        <div class="flex items-center justify-between py-2">
+          <span class="font-medium text-slate-800">${escapeHtml(cust)}</span>
+          <span class="font-bold text-blue-600">${total} 件</span>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(str) {
+      return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // 初始化
+    renderCalendar();
   </script>
 </body>
 </html>
