@@ -24,7 +24,7 @@
         <span class="text-xl">📦</span>
         <h1 class="font-bold text-base sm:text-lg text-slate-900">每日客戶件數統計</h1>
       </div>
-      <button onclick="openSettingsModal()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium flex items-center gap-1 transition">
+      <button type="button" onclick="openSettingsModal()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium flex items-center gap-1 transition">
         <span>⚙️</span>
         <span>設定</span>
       </button>
@@ -32,11 +32,11 @@
 
     <!-- 分頁切換 -->
     <div class="max-w-xl mx-auto grid grid-cols-2 border-t border-slate-100 bg-white">
-      <button id="tabBtnCapture" onclick="switchTab('capture')" class="py-2.5 text-sm font-bold border-b-2 border-blue-600 text-blue-600 flex items-center justify-center gap-1.5 transition">
+      <button type="button" id="tabBtnCapture" onclick="switchTab('capture')" class="py-2.5 text-sm font-bold border-b-2 border-blue-600 text-blue-600 flex items-center justify-center gap-1.5 transition">
         <span>📷</span>
         <span>拍照辨識</span>
       </button>
-      <button id="tabBtnCalendar" onclick="switchTab('calendar')" class="py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1.5 transition">
+      <button type="button" id="tabBtnCalendar" onclick="switchTab('calendar')" class="py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1.5 transition">
         <span>📅</span>
         <span>月曆與月結總表</span>
       </button>
@@ -52,7 +52,7 @@
           <p class="text-xs sm:text-sm text-slate-500">拍攝或上傳手寫單據，自動辨識日期、客戶與件數</p>
         </div>
 
-        <label class="block w-full cursor-pointer">
+        <label for="photoInput" class="block w-full cursor-pointer">
           <input id="photoInput" type="file" accept="image/*" class="hidden" onchange="handlePhotoSelected(event)" />
           <div class="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-center text-sm sm:text-base shadow-sm transition flex items-center justify-center gap-2">
             <span>📷</span>
@@ -75,7 +75,7 @@
       <div id="reviewCard" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
           <h2 class="font-bold text-base text-slate-900">✅ 確認辨識明細</h2>
-          <button onclick="resetCapture()" class="text-xs text-slate-400 hover:text-slate-600">清除重拍</button>
+          <button type="button" onclick="resetCapture()" class="text-xs text-slate-400 hover:text-slate-600">清除重拍</button>
         </div>
 
         <div>
@@ -101,7 +101,7 @@
           </div>
         </div>
 
-        <button id="saveBtn" onclick="saveRecognizedData()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base shadow-sm transition">
+        <button type="button" id="saveBtn" onclick="saveRecognizedData()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base shadow-sm transition">
           💾 確認並寫入試算表
         </button>
       </div>
@@ -113,9 +113,9 @@
       <!-- 月份切換與月曆 -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="flex items-center justify-between">
-          <button onclick="changeMonth(-1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-bold">◀ 上月</button>
+          <button type="button" onclick="changeMonth(-1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-bold">◀ 上月</button>
           <div id="monthTitle" class="font-bold text-base sm:text-lg text-slate-900">2026 年 11 月</div>
-          <button onclick="changeMonth(1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-bold">下月 ▶</button>
+          <button type="button" onclick="changeMonth(1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-bold">下月 ▶</button>
         </div>
 
         <div class="text-[11px] text-slate-400 text-right">
@@ -135,7 +135,7 @@
           <div>
             <h3 class="font-bold text-sm sm:text-base text-slate-900">📋 單日明細：<span id="selectedDateLabel" class="text-blue-600">--</span></h3>
           </div>
-          <button id="deleteDateBtn" onclick="deleteSelectedDateRecords()" class="hidden px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold transition">
+          <button type="button" id="deleteDateBtn" onclick="deleteSelectedDateRecords()" class="hidden px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold transition">
             🗑️ 刪除當日
           </button>
         </div>
@@ -172,7 +172,7 @@
     <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2">
         <h3 class="font-bold text-base text-slate-900">⚙️ 系統設定</h3>
-        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+        <button type="button" onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
 
       <div class="space-y-3">
@@ -188,8 +188,8 @@
       </div>
 
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">取消</button>
-        <button onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">儲存設定</button>
+        <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">取消</button>
+        <button type="button" onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">儲存設定</button>
       </div>
     </div>
   </div>
@@ -198,10 +198,29 @@
     const STORAGE_GAS_URL = 'DAILY_COUNT_GAS_URL';
     const STORAGE_CUSTOMERS = 'DAILY_COUNT_CUSTOMERS';
     const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxEWD9spdXd5ThmMHz8CvOyBIIwS-HTLUQzv_38H_ZTzGIwFEbCARWo43VPN7aOuqt7/exec';
-    const DEFAULT_CUSTOMERS = '三陽,台鈴,統益,三另,棧板,鈴另,朝陽,睿台';
+    const DEFAULT_CUSTOMERS = '山葉,三陽,台鈴,統益,三另,棧板,鈴另,朝陽,睿台';
 
     // 月曆每日件數排除加總的客戶名稱
     const EXCLUDED_CALENDAR_CUSTOMERS = ['棧板', '統益'];
+
+    const memoryStorage = {};
+
+    function safeGetStorage(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (e) {
+        return Object.prototype.hasOwnProperty.call(memoryStorage, key) ? memoryStorage[key] : null;
+      }
+    }
+
+    function safeSetStorage(key, value) {
+      memoryStorage[key] = value;
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        // 忽略受限環境下的 localStorage 寫入例外
+      }
+    }
 
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
@@ -210,18 +229,18 @@
     let dayChartInstance = null;
 
     function getGasUrl() {
-      const saved = (localStorage.getItem(STORAGE_GAS_URL) || '').trim();
+      const saved = (safeGetStorage(STORAGE_GAS_URL) || '').trim();
       return saved || DEFAULT_GAS_URL;
     }
 
     function getCustomersList() {
-      const raw = (localStorage.getItem(STORAGE_CUSTOMERS) || DEFAULT_CUSTOMERS).trim();
+      const raw = (safeGetStorage(STORAGE_CUSTOMERS) || DEFAULT_CUSTOMERS).trim();
       return raw.split(/[,，]/).map(s => s.trim()).filter(Boolean);
     }
 
     function openSettingsModal() {
       document.getElementById('gasUrlInput').value = getGasUrl();
-      document.getElementById('customersInput').value = localStorage.getItem(STORAGE_CUSTOMERS) || DEFAULT_CUSTOMERS;
+      document.getElementById('customersInput').value = safeGetStorage(STORAGE_CUSTOMERS) || DEFAULT_CUSTOMERS;
       document.getElementById('settingsModal').classList.remove('hidden');
     }
 
@@ -232,11 +251,11 @@
     function saveSettings() {
       const url = document.getElementById('gasUrlInput').value.trim() || DEFAULT_GAS_URL;
       const customers = document.getElementById('customersInput').value.trim() || DEFAULT_CUSTOMERS;
-      localStorage.setItem(STORAGE_GAS_URL, url);
-      localStorage.setItem(STORAGE_CUSTOMERS, customers);
+      safeSetStorage(STORAGE_GAS_URL, url);
+      safeSetStorage(STORAGE_CUSTOMERS, customers);
       closeSettingsModal();
       alert('設定已儲存！');
-      if (document.getElementById('tabCalendar').classList.contains('hidden') === false) {
+      if (!document.getElementById('tabCalendar').classList.contains('hidden')) {
         loadMonthData();
       }
     }
@@ -530,6 +549,7 @@
         const isSelected = dateStr === selectedDateStr;
 
         const cell = document.createElement('button');
+        cell.type = 'button';
         cell.onclick = () => selectDate(dateStr);
         cell.className = `h-14 rounded-xl flex flex-col items-center justify-center border transition ${
           isSelected ? 'bg-blue-600 text-white border-blue-600 shadow' :
@@ -537,7 +557,8 @@
           'bg-slate-50/50 border-transparent text-slate-400 hover:bg-slate-100'
         }`;
         cell.innerHTML = `
-          <span class="text-xs font-bold">${d}</span>${total > 0 ? `<span class="text-[10px] font-bold mt-0.5 px-1.5 rounded-full ${isSelected ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}">${total}</span>` : ''}
+          <span class="text-xs font-bold">${d}</span>
+          ${total > 0 ? `<span class="text-[10px] font-bold mt-0.5 px-1.5 rounded-full ${isSelected ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}">${total}</span>` : ''}
         `;
         grid.appendChild(cell);
       }
@@ -570,4 +591,130 @@
       const dayRows = monthRecords.filter(r => r.date === selectedDateStr);
 
       if (dayRows.length === 0) {
-        listEl.innerHTML = `<p class="text-slate-400 text-xs py-
+        listEl.innerHTML = `<p class="text-slate-400 text-xs py-2 text-center">此日期尚無紀錄</p>`;
+        totalBar.classList.add('hidden');
+        deleteBtn.classList.add('hidden');
+        chartWrap.classList.add('hidden');
+        return;
+      }
+
+      deleteBtn.classList.remove('hidden');
+      let daySum = 0;
+      listEl.innerHTML = dayRows.map(r => {
+        const c = Number(r.count) || 0;
+        daySum += c;
+        return `
+          <div class="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50">
+            <span class="font-medium text-slate-800">${escapeHtml(r.customer)}</span>
+            <span class="font-bold text-slate-900">${c} 件</span>
+          </div>
+        `;
+      }).join('');
+
+      totalValEl.textContent = `${daySum} 件`;
+      totalBar.classList.remove('hidden');
+      renderDayChart(dayRows);
+    }
+
+    function renderDayChart(dayRows) {
+      if (typeof Chart === 'undefined') return;
+      const chartWrap = document.getElementById('dayChartWrap');
+      chartWrap.classList.remove('hidden');
+      const ctx = document.getElementById('dayChartCanvas').getContext('2d');
+
+      if (dayChartInstance) {
+        dayChartInstance.destroy();
+      }
+
+      dayChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dayRows.map(r => r.customer),
+          datasets: [{
+            label: '件數',
+            data: dayRows.map(r => Number(r.count) || 0),
+            backgroundColor: '#2563eb',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+
+    async function deleteSelectedDateRecords() {
+      if (!selectedDateStr) return;
+      if (!confirm(`確定要刪除 ${selectedDateStr} 的所有紀錄嗎？`)) return;
+
+      const gasUrl = getGasUrl();
+      if (!gasUrl) return;
+
+      try {
+        const res = await fetch(gasUrl, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'deleteByDate', date: selectedDateStr })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          selectedDateStr = '';
+          await loadMonthData();
+        } else {
+          alert('刪除失敗：' + (data.message || '未知錯誤'));
+        }
+      } catch (err) {
+        alert('刪除發生錯誤：' + err.message);
+      }
+    }
+
+    function renderMonthlySummary() {
+      const listEl = document.getElementById('monthlySummaryList');
+      const grandTotalEl = document.getElementById('monthGrandTotal');
+
+      if (monthRecords.length === 0) {
+        listEl.innerHTML = `<p class="text-slate-400 text-xs py-2 text-center">尚無本月資料</p>`;
+        grandTotalEl.textContent = '總計：0 件';
+        return;
+      }
+
+      const map = {};
+      let grandTotal = 0;
+      monthRecords.forEach(r => {
+        const cust = String(r.customer).trim();
+        const cnt = Number(r.count) || 0;
+        map[cust] = (map[cust] || 0) + cnt;
+        grandTotal += cnt;
+      });
+
+      const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
+      grandTotalEl.textContent = `總計：${grandTotal} 件`;
+
+      listEl.innerHTML = sorted.map(([cust, total]) => `
+        <div class="flex items-center justify-between py-2">
+          <span class="font-medium text-slate-800">${escapeHtml(cust)}</span>
+          <span class="font-bold text-blue-600">${total} 件</span>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(str) {
+      return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // 初始化
+    renderCalendar();
+  </script>
+</body>
+</html>
